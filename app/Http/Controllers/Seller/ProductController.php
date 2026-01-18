@@ -32,7 +32,6 @@ class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
 
-            // cena w zł
             'price' => ['required', 'regex:/^\d+([.,]\d{1,2})?$/'],
 
             'stock' => ['required', 'integer', 'min:0'],
@@ -117,10 +116,8 @@ class ProductController extends Controller
 
     private function toCents(string $price): int
     {
-        // obsługa "12,34" i "12.34"
         $normalized = str_replace(',', '.', trim($price));
 
-        // "12" -> "12.00"
         if (!str_contains($normalized, '.')) {
             $normalized .= '.00';
         }

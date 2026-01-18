@@ -29,7 +29,7 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-        $order->load('items');
+        $order->load('items', 'statusChanges');
 
         return view('seller.orders.show', [
             'order' => $order,
@@ -43,9 +43,20 @@ class OrderController extends Controller
             'status' => ['required', 'in:' . implode(',', Order::STATUSES)],
         ]);
 
-        $order->update([
-            'status' => $data['status'],
-        ]);
+        $old = $order->status;
+        $new = $data['status'];
+
+        $order->update(['status' => $new]);
+
+        if ($old !== $new) {
+            \App\Models\OrderStatusChange::create([
+                'order_id' => $order->id,
+                'old_status' => $old,
+                'new_status' => $new,
+                'changed_by_user_id' => auth()->id(),
+            ]);
+        }
+
 
         return redirect()->route('seller.orders.show', $order)->with('success', 'Status zmieniony.');
     }

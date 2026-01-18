@@ -26,14 +26,14 @@
                 @foreach ($order->items as $it)
                     <li>
                         {{ $it->product_name }} x {{ $it->quantity }}
-                        ({{ number_format($it->unit_price_cents/100, 2, ',', ' ') }} zł)
-                        = {{ number_format($it->line_total_cents/100, 2, ',', ' ') }} zł
+                        ({{ number_format($it->unit_price_cents / 100, 2, ',', ' ') }} zł)
+                        = {{ number_format($it->line_total_cents / 100, 2, ',', ' ') }} zł
                     </li>
                 @endforeach
             </ul>
 
             <div class="mt-3 font-semibold">
-                Razem: {{ number_format($order->total_cents/100, 2, ',', ' ') }} zł
+                Razem: {{ number_format($order->total_cents / 100, 2, ',', ' ') }} zł
             </div>
         </div>
 
@@ -61,6 +61,27 @@
                         @endforeach
                     </ul>
                 </div>
+            @endif
+        </div>
+        <div class="mt-6 border p-4">
+            <div class="font-semibold mb-2">Historia statusów</div>
+
+            @if($order->statusChanges->isEmpty())
+                <div class="opacity-70">Brak historii.</div>
+            @else
+                <ol class="space-y-2">
+                    @foreach($order->statusChanges as $ch)
+                        <li class="border-b pb-2">
+                            <div>
+                                <strong>{{ $ch->old_status ?? 'start' }}</strong>
+                                → <strong>{{ $ch->new_status }}</strong>
+                            </div>
+                            <div class="text-sm opacity-70">
+                                {{ $ch->created_at->format('Y-m-d H:i') }}
+                            </div>
+                        </li>
+                    @endforeach
+                </ol>
             @endif
         </div>
     </div>

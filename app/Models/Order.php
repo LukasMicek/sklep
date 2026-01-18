@@ -16,6 +16,9 @@ class Order extends Model
         'address_line',
         'city',
         'postal_code',
+        'subtotal_cents',
+        'discount_cents',
+        'coupon_code',
     ];
 
     public const STATUSES = ['new', 'in_progress', 'shipped', 'canceled'];
@@ -23,6 +26,12 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function statusChanges()
+    {
+        return $this->hasMany(\App\Models\OrderStatusChange::class)
+            ->orderBy('created_at');
     }
 }
 

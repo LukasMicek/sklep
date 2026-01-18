@@ -25,9 +25,9 @@
                 @csrf
 
                 <label class="block mb-2">Kategoria</label>
-                <select class="border p-2 w-full" name="category_id">
+                <select class="border p-2 w-full" name="category_id" style="color-scheme: dark">
                     @foreach ($categories as $c)
-                        <option value="{{ $c->id }}" @selected(old('category_id') == $c->id)>
+                        <option value="{{ $c->id }}" class="text-black">
                             {{ $c->name }}
                         </option>
                     @endforeach

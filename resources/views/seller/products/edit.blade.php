@@ -21,12 +21,11 @@
 
             <label class="block mb-2">Kategoria</label>
             <select class="border p-2 w-full" name="category_id">
-                @foreach ($categories as $c)
-                    <option value="{{ $c->id }}"
-                        @selected(old('category_id', $product->category_id) == $c->id)>
-                        {{ $c->name }}
-                    </option>
-                @endforeach
+                    @foreach ($categories as $c)
+                        <option value="{{ $c->id }}" class="text-black">
+                            {{ $c->name }}
+                        </option>
+                    @endforeach
             </select>
 
             <label class="block mt-4 mb-2">Nazwa</label>

@@ -15,14 +15,37 @@
                 @foreach ($cart['items'] as $item)
                     <li>
                         {{ $item['name'] }} x {{ $item['quantity'] }}
-                        ({{ number_format($item['price_cents']/100, 2, ',', ' ') }} zł)
+                        ({{ number_format($item['price_cents'] / 100, 2, ',', ' ') }} zł)
                     </li>
                 @endforeach
             </ul>
 
-            <div class="mt-3 font-semibold">
-                Razem: {{ number_format($totalCents/100, 2, ',', ' ') }} zł
+            @php
+                $coupon = session('cart.coupon');
+            @endphp
+
+            <div class="mt-4 border p-4">
+                <div class="flex justify-between">
+                    <div class="opacity-70">Suma</div>
+                    <div>{{ number_format($subtotalCents / 100, 2, ',', ' ') }} zł</div>
+                </div>
+
+                @if($discountCents > 0)
+                    <div class="flex justify-between mt-1">
+                        <div class="opacity-70">
+                            Rabat
+                            @if($coupon) ({{ $coupon['code'] }}) @endif
+                        </div>
+                        <div>-{{ number_format($discountCents / 100, 2, ',', ' ') }} zł</div>
+                    </div>
+                @endif
+
+                <div class="flex justify-between mt-2 font-semibold">
+                    <div>Razem</div>
+                    <div>{{ number_format($totalCents / 100, 2, ',', ' ') }} zł</div>
+                </div>
             </div>
+
         </div>
 
         @if ($errors->any())

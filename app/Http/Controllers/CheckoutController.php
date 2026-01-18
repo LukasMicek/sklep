@@ -14,21 +14,35 @@ class CheckoutController extends Controller
 {
     public function show()
     {
-        $cart = session()->get('cart', ['items' => []]);
+        $cart = session('cart', ['items' => []]);
 
-        if (empty($cart['items'])) {
-            return redirect()->route('cart.index')->with('error', 'Koszyk jest pusty.');
+        // policz subtotal na podstawie koszyka (to samo co w place())
+        $subtotalCents = 0;
+
+        foreach (($cart['items'] ?? []) as $productId => $item) {
+            $product = Product::find($productId);
+            if (!$product)
+                continue;
+
+            $qty = (int) ($item['quantity'] ?? 0);
+            $subtotalCents += $product->price_cents * $qty;
         }
 
-        $totalCents = 0;
-        foreach ($cart['items'] as $item) {
-            $totalCents += $item['price_cents'] * $item['quantity'];
+        $coupon = session('cart.coupon');
+        $discountCents = 0;
+
+        if ($coupon) {
+            if ($coupon['type'] === 'percent') {
+                $discountCents = (int) floor($subtotalCents * ((int) $coupon['value'] / 100));
+            } else {
+                $discountCents = (int) $coupon['value'];
+            }
+            $discountCents = min($discountCents, $subtotalCents);
         }
 
-        return view('checkout.show', [
-            'cart' => $cart,
-            'totalCents' => $totalCents,
-        ]);
+        $totalCents = max($subtotalCents - $discountCents, 0);
+
+        return view('checkout.show', compact('cart', 'subtotalCents', 'discountCents', 'totalCents', 'coupon'));
     }
 
     public function place(Request $request)
@@ -67,16 +81,52 @@ class CheckoutController extends Controller
                 $totalCents += $product->price_cents * $item['quantity'];
             }
 
+            $coupon = session('cart.coupon');
+
+            $subtotalCents = $totalCents;
+            $discountCents = 0;
+
+            if ($coupon) {
+                if ($coupon['type'] === 'percent') {
+                    $discountCents = (int) floor($subtotalCents * ((int) $coupon['value'] / 100));
+                } else {
+                    $discountCents = (int) $coupon['value'];
+                }
+
+                $discountCents = min($discountCents, $subtotalCents);
+            }
+
+            $totalAfterDiscount = max($subtotalCents - $discountCents, 0);
+
+
             $order = Order::create([
                 'user_id' => auth()->id(),
                 'status' => 'new',
-                'total_cents' => $totalCents,
+                'subtotal_cents' => $subtotalCents,
+                'discount_cents' => $discountCents,
+                'coupon_code' => $coupon['code'] ?? null,
+                'total_cents' => $totalAfterDiscount,
                 'full_name' => $data['full_name'],
                 'phone' => $data['phone'] ?? null,
                 'address_line' => $data['address_line'],
                 'city' => $data['city'],
                 'postal_code' => $data['postal_code'],
             ]);
+
+            if ($coupon) {
+                \App\Models\Coupon::where('code', $coupon['code'])->increment('used_count');
+            }
+
+            session()->forget('cart.coupon');
+
+
+            \App\Models\OrderStatusChange::create([
+                'order_id' => $order->id,
+                'old_status' => null,
+                'new_status' => $order->status,
+                'changed_by_user_id' => auth()->id(),
+            ]);
+
 
             foreach ($cart['items'] as $productId => $item) {
                 $product = $products->get((int) $productId);
@@ -96,7 +146,7 @@ class CheckoutController extends Controller
             }
 
             session()->forget('cart');
-            
+
             Mail::to(auth()->user()->email)->send(new OrderPlaced($order));
 
             return redirect()->route('orders.mine')->with('success', 'Zamówienie złożone.');

@@ -37,9 +37,11 @@
                             </td>
                             <td class="p-2">{{ number_format($item['price_cents'] / 100, 2, ',', ' ') }} zł</td>
                             <td class="p-2">
-                                <form class="flex items-center gap-2" method="POST" action="{{ route('cart.update', $item['slug']) }}">
+                                <form class="flex items-center gap-2" method="POST"
+                                    action="{{ route('cart.update', $item['slug']) }}">
                                     @csrf
-                                    <input class="border p-1 w-20" type="number" name="quantity" min="0" value="{{ $item['quantity'] }}">
+                                    <input class="border p-1 w-20" type="number" name="quantity" min="0"
+                                        value="{{ $item['quantity'] }}">
                                     <button class="underline" type="submit">Zapisz</button>
                                 </form>
                             </td>
@@ -56,8 +58,30 @@
             </table>
 
             <div class="mt-4 flex items-center justify-between">
-                <div class="font-semibold">
-                    Razem: {{ number_format($totalCents / 100, 2, ',', ' ') }} zł
+                @php
+                    $coupon = session('cart.coupon');
+                @endphp
+
+                <div class="mt-4 border p-4">
+                    <div class="flex justify-between">
+                        <div class="opacity-70">Suma</div>
+                        <div>{{ number_format($subtotalCents / 100, 2, ',', ' ') }} zł</div>
+                    </div>
+
+                    @if($discountCents > 0)
+                        <div class="flex justify-between mt-1">
+                            <div class="opacity-70">
+                                Rabat
+                                @if($coupon) ({{ $coupon['code'] }}) @endif
+                            </div>
+                            <div>-{{ number_format($discountCents / 100, 2, ',', ' ') }} zł</div>
+                        </div>
+                    @endif
+
+                    <div class="flex justify-between mt-2 font-semibold">
+                        <div>Razem</div>
+                        <div>{{ number_format($totalCents / 100, 2, ',', ' ') }} zł</div>
+                    </div>
                 </div>
                 <a class="underline" href="{{ route('checkout.show') }}">Przejdź do checkout</a>
                 <form method="POST" action="{{ route('cart.clear') }}">
@@ -65,6 +89,32 @@
                     <button class="underline" type="submit">Wyczyść koszyk</button>
                 </form>
             </div>
+        @endif
+    </div>
+    @php
+        $coupon = session('cart.coupon');
+    @endphp
+
+    <div class="border p-4 mt-4">
+        <div class="font-semibold mb-2">Kupon rabatowy</div>
+
+        @if($coupon)
+            <div class="flex items-center justify-between">
+                <div>Aktywny kupon: <strong>{{ $coupon['code'] }}</strong></div>
+                <form method="POST" action="{{ route('cart.coupon.remove') }}">
+                    @csrf
+                    <button class="underline">Usuń</button>
+                </form>
+            </div>
+        @else
+            <form method="POST" action="{{ route('cart.coupon.apply') }}" class="flex gap-2 items-start">
+                @csrf
+                <div class="flex-1">
+                    <input name="code" class="w-full border p-2" placeholder="np. PROMO10" />
+                    @error('code') <div class="text-sm text-red-400 mt-1">{{ $message }}</div> @enderror
+                </div>
+                <button class="border px-4 py-2">Zastosuj</button>
+            </form>
         @endif
     </div>
 </x-layouts.app>
